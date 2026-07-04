@@ -1,83 +1,91 @@
-import json
+import sqlite3
 
 
-def load_videos():
-    try:
-        with open('youtube.txt', 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return []
-    
+con=sqlite3.connect('youtube_videos.db')
 
-def save_data_helper(videos):
-    with open('youtube.txt', 'w') as file:
-        json.dump(videos, file)
+cursor=con.cursor()
+
+cursor.execute('''
+               CREATE TABLE IF NOT EXISTS videos(
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               name TEXT NOT NULL, 
+               time TEXT NOT NULL
+               )
+               
+               ''')
 
 
-def list_all_videos(videos):
-    for index, video in enumerate(videos, start=1):
-        # print("*"*100)
-        print(f"{index}. Name: {video['name']}, Time: {video['time']}") 
-    print("\n") # print(videos)
-    print("*"*100)
 
-def add_video(videos):
-    name=input("Enter the video name:")
-    time=input("Enter the video time:")
-    videos.append({'name': name, 'time': time})
-    save_data_helper(videos)
 
-def update_video(videos):
-    list_all_videos(videos)
-    index = int(input("Enter the video number to update: ")) - 1
-    if 0 <= index < len(videos):
-        name = input("Enter the new video name: ")
-        time = input("Enter the new video time: ")
-        videos[index] = {'name': name, 'time': time}
-        save_data_helper(videos)
-    else:
-        print("Invalid video number.")
-    
+def add_video():
+    name = input("Enter video name: ")
+    time = input("Enter video time: ")
+    cursor.execute('INSERT INTO videos (name, time) VALUES (?, ?)', (name, time))
+    con.commit()
+    print("Video added successfully!")
 
-def delete_video(videos):
-    list_all_videos(videos)
-    index = int(input("Enter the video number to delete: ")) - 1
-    if 0 <= index < len(videos):
-        videos.pop(index)
-        save_data_helper(videos)
-    else:
-        print("Invalid video number.")
+def show_videos():
+    cursor.execute('SELECT * FROM videos')
+    videos = cursor.fetchall()
+    for video in videos:
+        print(f"ID: {video[0]}, Name: {video[1]}, Time: {video[2]}")
+
+def update_video():
+     
+     cursor.execute('SELECT * FROM videos')
+     videos = cursor.fetchall()
+    #  print(videos)
+     for video in videos:
+        print(f"ID: {video[0]}, Name: {video[1]}, Time: {video[2]}")
+
+     video_id = input("Enter video ID to update: ")
+     new_name = input("Enter new video name: ")
+     new_time = input("Enter new video time: ")
+     cursor.execute('UPDATE videos SET name = ?, time = ? WHERE id = ?', (new_name, new_time, video_id))
+     con.commit()
+     print("*"*100)
+     print("Video updated successfully!")
+     print("Updated video list:")
+     show_videos()
+
+def delete_video():
+    video_id = input("Enter video ID to delete: ")
+    cursor.execute('DELETE FROM videos WHERE id = ?', (video_id,))
+    con.commit()
+    print("Video deleted successfully!")
+            
 
 
 
 def main():
-    videos = load_videos()
-
     while True:
-        print("\n Youtube Manager | choose an option:")
-        print("1. List all youtube videos")
-        print("2. Add a new youtube video")
-        print("3. Update a youtube video")
-        print("4. Delete a youtube video")      
-        print("5. Exit the application")
-        print("--------------------------------------------------")
+        print("\nYouTube Video Management System")
+        print("1. Add video")
+        print("2. Show videos")
+        print("3. Update video")
+        print("4. Delete video")
+        print("5. Exit")
         choice = input("Enter your choice: ")
-        match choice:
-            case '1':
-                list_all_videos(videos)
-            case '2':
-                add_video(videos)
-            case '3':
-                update_video(videos)
-            case '4':
-                delete_video(videos)
-            case '5':
-                print("Exiting the application. Goodbye!")
-                save_data_helper(videos)
-                break
-            case _:
-                print("Invalid choice. Please try again.")
+        
+        if choice == '1':
 
+            add_video()
+        
+        elif choice == '2':
+            show_videos()
+        
+        elif choice == '3':
+            update_video()
+        
+        elif choice == '4':
+            delete_video()
+        
+        elif choice == '5':
+            break
+        
+        else:
+            print("Invalid choice! Please try again.")
+        con.close()
 
 
 if __name__ == "__main__":
